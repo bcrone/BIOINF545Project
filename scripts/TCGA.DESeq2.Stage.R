@@ -1,22 +1,19 @@
-args = commandArgs(trailingOnly = TRUE)
-
 library(DESeq2)
 library(TCGAbiolinks)
 library(ggplot2)
 library(ggrepel)
-rootDirectory = args[1]
 
-sampleFilesPath <- list.files(path=rootDirectory, pattern="htseq.counts.gz", full.names=TRUE, recursive=TRUE)
+sampleFilesPath <- list.files(pattern="htseq.counts.gz", full.names=TRUE, recursive=TRUE)
 
 tableSplit <- strsplit(sampleFilesPath,"/")
-tableSplit <- matrix(unlist(tableSplit),ncol=13,byrow=TRUE)
-htseq.path <- "/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/htseq/"
-xml.path <- "/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/xml/"
-updated.path <- paste(htseq.path, gsub(".gz","",tableSplit[,13]),sep="")
+tableSplit <- matrix(unlist(tableSplit),ncol=5,byrow=TRUE)
+htseq.path <- "data/htseq/"
+xml.path <- "data/xml/"
+updated.path <- paste(htseq.path, gsub(".gz","",tableSplit[,5]),sep="")
 
 # Master List
-masterTable <- data.frame(sampleName=gsub(".htseq.counts.gz","",tableSplit[,13]),fileName=gsub(".gz","",tableSplit[,13]),
-                          sampleID=tableSplit[,12],subjectID=tableSplit[,11],sampleType=gsub("^.*-","",tableSplit[,12]))
+masterTable <- data.frame(sampleName=gsub(".htseq.counts.gz","",tableSplit[,5]),fileName=gsub(".gz","",tableSplit[,5]),
+                          sampleID=tableSplit[,4],subjectID=tableSplit[,3],sampleType=gsub("^.*-","",tableSplit[,4]))
 
 # Pull Clinical Data XML
 queryCOAD <- GDCquery(project = "TCGA-COAD", 
@@ -29,15 +26,15 @@ queryREAD <- GDCquery(project = "TCGA-READ",
                       file.type = "xml",
                       barcode = masterTable$subjectID)
 
-GDCdownload(queryCOAD,directory="/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/xml/")
+GDCdownload(queryCOAD,directory=xml.path)
 
-GDCdownload(queryREAD,directory="/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/xml/")
+GDCdownload(queryREAD,directory=xml.path)
 
-
-clinicalCOAD <- GDCprepare_clinic(queryCOAD,directory="/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/xml/",
+# Gather Clinical Data
+clinicalCOAD <- GDCprepare_clinic(queryCOAD,directory=xml.path,
                               clinical.info = "patient")
 
-clinicalREAD <- GDCprepare_clinic(queryREAD,directory="/Users/bcrone/Documents/CLASS/Winter20/BIOINF545/Project/BIOINF545Project/data/xml/",
+clinicalREAD <- GDCprepare_clinic(queryREAD,directory=xml.path,
                                   clinical.info = "patient")
 
 # Remap Stage ID
@@ -84,8 +81,8 @@ sampleTable <- data.frame(sampleName=masterTable$sampleName,fileName=masterTable
 sampleTableNC <- sampleTable[sampleTable$sampleType != "11A",]
 
 # Build DESeq datasets
-ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable,directory=htseq.path,design=~stage+sampleType)
-ddsHTSeqNC <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTableNC,directory=htseq.path,design=~stage+sampleType)
+ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable,directory=htseq.path,design=~stage)
+ddsHTSeqNC <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTableNC,directory=htseq.path,design=~stage)
 
 # QC: remove genes with avg read < 1
 ddsHTSeq <- ddsHTSeq[rowSums(counts(ddsHTSeq))>=dim(ddsHTSeq)[2],]
@@ -97,13 +94,13 @@ ddsHTSeqNC <- DESeq(ddsHTSeqNC)
 rld <- vst(ddsHTSeq)
 rldNC <- vst(ddsHTSeqNC)
 
-pca <- prcomp(t(assay(rld)))
-pcaNC <- prcomp(t(assay(rldNC)))
+pca <- prcomp(t(assay(rld)),scale=TRUE)
+pcaNC <- prcomp(t(assay(rldNC)),scale=TRUE)
 
 percentVar <- pca$sdev^2/sum(pca$sdev^2)
 percentVarNC <- pcaNC$sdev^2/sum(pcaNC$sdev^2)
 
-intgroup <- c("sampleType","stage")
+intgroup <- c("stage")
 
 intgroup.df <- as.data.frame(colData(rld)[, intgroup, drop = FALSE])
 intgroup.dfNC <- as.data.frame(colData(rldNC)[, intgroup, drop = FALSE])
@@ -120,34 +117,111 @@ groupNC <- if (length(intgroup) > 1) {
   colData(rldNC)[[intgroup]]
 }
 
+# 1v2
 d12 <- data.frame(PC1 = pca$x[, 1], PC2 = pca$x[, 2], group = group, 
                 intgroup.df, name = colData(rld)[,1])
 
 dNC12 <- data.frame(PC1 = pcaNC$x[, 1], PC2 = pcaNC$x[, 2], group = groupNC, 
                 intgroup.dfNC, name = colData(rldNC)[,1])
 
+# 1v3
+d13 <- data.frame(PC1 = pca$x[, 1], PC3 = pca$x[, 3], group = group, 
+                  intgroup.df, name = colData(rld)[,1])
+
+dNC13 <- data.frame(PC1 = pcaNC$x[, 1], PC3 = pcaNC$x[, 3], group = groupNC, 
+                    intgroup.dfNC, name = colData(rldNC)[,1])
+
+# 1v4
+d14 <- data.frame(PC1 = pca$x[, 1], PC4 = pca$x[, 4], group = group, 
+                  intgroup.df, name = colData(rld)[,1])
+
+dNC14 <- data.frame(PC1 = pcaNC$x[, 1], PC4 = pcaNC$x[, 4], group = groupNC, 
+                    intgroup.dfNC, name = colData(rldNC)[,1])
+
+# 2v3 
+d23 <- data.frame(PC2 = pca$x[, 2], PC3 = pca$x[, 3], group = group, 
+                  intgroup.df, name = colData(rld)[,1])
+
+dNC23 <- data.frame(PC2 = pcaNC$x[, 2], PC3 = pcaNC$x[, 3], group = groupNC, 
+                    intgroup.dfNC, name = colData(rldNC)[,1])
+
+# 2v4
+d24 <- data.frame(PC2 = pca$x[, 2], PC4 = pca$x[, 4], group = group, 
+                  intgroup.df, name = colData(rld)[,1])
+
+dNC24 <- data.frame(PC2 = pcaNC$x[, 2], PC4 = pcaNC$x[, 4], group = groupNC, 
+                    intgroup.dfNC, name = colData(rldNC)[,1])
+
+# 3v4
 d34 <- data.frame(PC3 = pca$x[, 3], PC4 = pca$x[, 4], group = group, 
                   intgroup.df, name = colData(rld)[,1])
 
 dNC34 <- data.frame(PC3 = pcaNC$x[, 3], PC4 = pcaNC$x[, 4], group = groupNC, 
                     intgroup.dfNC, name = colData(rldNC)[,1])
 
+
+# 1v2
 ggplot(data = d12, aes_string(x = "PC1", y = "PC2", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
   ylab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
-  ggtitle("PC1 vs PC2 - Sample Type + Stage (With Controls)")
+  ggtitle("PC1 vs PC2 - Stage (With Controls)")
 
 ggplot(data = dNC12, aes_string(x = "PC1", y = "PC2", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC1: ", round(percentVarNC[1] * 100), "% variance")) +
   ylab(paste0("PC2: ", round(percentVarNC[2] * 100), "% variance")) + coord_fixed() +
-  ggtitle("PC1 vs PC2 - Sample Type + Stage (No Controls)")
+  ggtitle("PC1 vs PC2 - Stage (No Controls)")
 
+# 1v3
+ggplot(data = d13, aes_string(x = "PC1", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
+  ylab(paste0("PC3: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ggtitle("PC1 vs PC3 - Stage (With Controls)")
+
+ggplot(data = dNC13, aes_string(x = "PC1", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  ylab(paste0("PC3: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  ggtitle("PC1 vs PC3 - Stage (No Controls)")
+
+# 1v4
+ggplot(data = d14, aes_string(x = "PC1", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ggtitle("PC1 vs PC4 - Stage (With Controls)")
+
+ggplot(data = dNC14, aes_string(x = "PC1", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  ggtitle("PC1 vs PC4 - Stage (No Controls)")
+
+# 2v3
+ggplot(data = d23, aes_string(x = "PC2", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ggtitle("PC2 vs PC3 - Stage (With Controls)")
+
+ggplot(data = dNC23, aes_string(x = "PC2", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  ggtitle("PC2 vs PC3 - Stage (No Controls)")
+
+# 2v4
+ggplot(data = d24, aes_string(x = "PC2", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ggtitle("PC2 vs PC4 - Stage (With Controls)")
+
+ggplot(data = dNC24, aes_string(x = "PC2", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
+  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  ggtitle("PC2 vs PC4 - Stage (No Controls)")
+
+# 3v4
 ggplot(data = d34, aes_string(x = "PC3", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC3: ", round(percentVar[3] * 100), "% variance")) +
   ylab(paste0("PC4: ", round(percentVar[4] * 100), "% variance")) + coord_fixed() +
-  ggtitle("PC3 vs PC4 - Sample Type + Stage (With Controls)")
+  ggtitle("PC3 vs PC4 - Stage (With Controls)")
 
 ggplot(data = dNC34, aes_string(x = "PC3", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC3: ", round(percentVarNC[3] * 100), "% variance")) +
   ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
-  ggtitle("PC3 vs PC4 - Sample Type + Stage (No Controls)")
+  ggtitle("PC3 vs PC4 - Stage (No Controls)")
