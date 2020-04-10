@@ -174,44 +174,44 @@ ggplot(data = dNC12, aes_string(x = "PC1", y = "PC2", color = "group", label = "
 # 1v3
 ggplot(data = d13, aes_string(x = "PC1", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
-  ylab(paste0("PC3: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ylab(paste0("PC3: ", round(percentVar[3] * 100), "% variance")) + coord_fixed() + 
   ggtitle("PC1 vs PC3 - Stage (With Controls)")
 
 ggplot(data = dNC13, aes_string(x = "PC1", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
-  ylab(paste0("PC3: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  xlab(paste0("PC1: ", round(percentVarNC[1] * 100), "% variance")) +
+  ylab(paste0("PC3: ", round(percentVarNC[3] * 100), "% variance")) + coord_fixed() +
   ggtitle("PC1 vs PC3 - Stage (No Controls)")
 
 # 1v4
 ggplot(data = d14, aes_string(x = "PC1", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
   xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
-  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  ylab(paste0("PC4: ", round(percentVar[4] * 100), "% variance")) + coord_fixed() + 
   ggtitle("PC1 vs PC4 - Stage (With Controls)")
 
 ggplot(data = dNC14, aes_string(x = "PC1", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  xlab(paste0("PC1: ", round(percentVarNC[1] * 100), "% variance")) +
   ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
   ggtitle("PC1 vs PC4 - Stage (No Controls)")
 
 # 2v3
 ggplot(data = d23, aes_string(x = "PC2", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
-  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  xlab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
+  ylab(paste0("PC3: ", round(percentVar[3] * 100), "% variance")) + coord_fixed() + 
   ggtitle("PC2 vs PC3 - Stage (With Controls)")
 
 ggplot(data = dNC23, aes_string(x = "PC2", y = "PC3", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
-  ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
+  xlab(paste0("PC2: ", round(percentVarNC[2] * 100), "% variance")) +
+  ylab(paste0("PC3: ", round(percentVarNC[3] * 100), "% variance")) + coord_fixed() +
   ggtitle("PC2 vs PC3 - Stage (No Controls)")
 
 # 2v4
 ggplot(data = d24, aes_string(x = "PC2", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVar[1] * 100), "% variance")) +
-  ylab(paste0("PC4: ", round(percentVar[2] * 100), "% variance")) + coord_fixed() + 
+  xlab(paste0("PC2: ", round(percentVar[2] * 100), "% variance")) +
+  ylab(paste0("PC4: ", round(percentVar[4] * 100), "% variance")) + coord_fixed() + 
   ggtitle("PC2 vs PC4 - Stage (With Controls)")
 
 ggplot(data = dNC24, aes_string(x = "PC2", y = "PC4", color = "group", label = "name")) + geom_point(size = 3) + 
-  xlab(paste0("PC1: ", round(percentVarNC[3] * 100), "% variance")) +
+  xlab(paste0("PC2: ", round(percentVarNC[2] * 100), "% variance")) +
   ylab(paste0("PC4: ", round(percentVarNC[4] * 100), "% variance")) + coord_fixed() +
   ggtitle("PC2 vs PC4 - Stage (No Controls)")
 
