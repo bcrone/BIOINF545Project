@@ -77,8 +77,8 @@ masterTable <- masterTable[!is.na(masterTable$stage),]
 sampleTable <- data.frame(sampleName=masterTable$sampleName,fileName=masterTable$fileName,
                           stage=masterTable$stage,sampleType=masterTable$sampleType,sampleID=masterTable$sampleID)
 
-# Drop control samples
-sampleTableNC <- sampleTable[sampleTable$sampleType != "11A",]
+# Isolate just 01A
+sampleTableNC <- sampleTable[sampleTable$sampleType == "01A",]
 
 # Build DESeq datasets
 ddsHTSeq <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTable,directory=htseq.path,design=~stage)
@@ -88,8 +88,10 @@ ddsHTSeqNC <- DESeqDataSetFromHTSeqCount(sampleTable=sampleTableNC,directory=hts
 ddsHTSeq <- ddsHTSeq[rowSums(counts(ddsHTSeq))>=dim(ddsHTSeq)[2],]
 ddsHTSeqNC <- ddsHTSeqNC[rowSums(counts(ddsHTSeqNC))>=dim(ddsHTSeqNC)[2],]
 
+# Note: These are the objects needed for differential expression
 ddsHTSeq <- DESeq(ddsHTSeq)
 ddsHTSeqNC <- DESeq(ddsHTSeqNC)
+
 # PCA
 rld <- vst(ddsHTSeq)
 rldNC <- vst(ddsHTSeqNC)
